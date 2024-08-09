@@ -1,0 +1,14 @@
+[tool.coverage.run]
+source = ["src/"]
+omit = ["src/main.py"]
+
+[tool.pylint.'MASTER']
+fail-under = 9
+max-line-length=120
+extension-pkg-whitelist = "PyQt6"
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = ["missing-module-docstring"]
+
+[tool.pylint.'TYPECHECK']
+generated-members = "bgapi.*"
