@@ -3,6 +3,15 @@ from enum import IntEnum
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
+class CharacteristicState(IntEnum):
+    """enum for handling whether a characteristic is currently being used for a gatt command"""
+
+    NONE = 0
+    READING = 1
+    WRITING = 2
+    SUBSCRIBING_NOTIFICATION = 3
+    SUBSCRIBING_INDICATION = 4
+
 class Characteristic: # pylint: disable=too-few-public-methods
     """Class for holding information pertaining to a Bluetooth characteristic"""
 
@@ -11,6 +20,7 @@ class Characteristic: # pylint: disable=too-few-public-methods
         self.handle = handle
         self.properties = properties
 
+        self.state = CharacteristicState.NONE
         self.packet = ""
 
 class ServiceState(IntEnum):
@@ -108,6 +118,16 @@ class Device: # pylint: disable=too-many-instance-attributes
 
         return None
 
+    def is_using_gatt_command(self) -> bool:
+        """Check whether a characteristic in the device is currently being read/written/subscribed to"""
+
+        return (
+            any(service.state != ServiceState.DISCOVERED for service in self.services) or
+            any(characteristic.state != CharacteristicState.NONE
+                for service in self.services
+                for characteristic in service.characteristics)
+        )
+
 class CharacteristicWidget(QFrame): # pragma: no cover, pylint: disable=too-many-instance-attributes
     """Widget for displaying Characteristic information in a GUI"""
 
@@ -133,19 +153,15 @@ class CharacteristicWidget(QFrame): # pragma: no cover, pylint: disable=too-many
         self.handle.setText(f"[{self.characteristic.handle:08X}]")
         self.handle.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
-        self.read_button.setText("R")
         self.read_button.setEnabled(self.characteristic.properties & 0x02 != 0)
         self.read_button.setFixedSize(32, 32)
 
-        self.write_button.setText("W")
         self.write_button.setEnabled(self.characteristic.properties & 0x08 != 0)
         self.write_button.setFixedSize(32, 32)
 
-        self.notify_button.setText("N")
         self.notify_button.setEnabled(self.characteristic.properties & 0x10 != 0)
         self.notify_button.setFixedSize(32, 32)
 
-        self.indicate_button.setText("I")
         self.indicate_button.setEnabled(self.characteristic.properties & 0x20 != 0)
         self.indicate_button.setFixedSize(32, 32)
 
@@ -176,6 +192,21 @@ class CharacteristicWidget(QFrame): # pragma: no cover, pylint: disable=too-many
 
     def update_layout(self) -> None:
         """Update the layout with the information from the Characteristic class"""
+
+        self.read_button.setText("R")
+        self.write_button.setText("W")
+        self.notify_button.setText("N")
+        self.indicate_button.setText("I")
+
+        match self.characteristic.state:
+            case CharacteristicState.READING:
+                self.read_button.setText("R...")
+            case CharacteristicState.WRITING:
+                self.write_button.setText("W...")
+            case CharacteristicState.SUBSCRIBING_NOTIFICATION:
+                self.notify_button.setText("N...")
+            case CharacteristicState.SUBSCRIBING_INDICATION:
+                self.indicate_button.setText("I...")
 
         self.packet.setText(self.characteristic.packet)
 

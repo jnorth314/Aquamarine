@@ -27,7 +27,7 @@ jobs:
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint $(find ./src/ -name "*.py" | xargs)
+        pylint ./src
   Unittest:
     runs-on: windows-latest
     strategy:
