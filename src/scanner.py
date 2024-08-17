@@ -10,7 +10,10 @@ from PyQt6.QtWidgets import (
 )
 import serial.tools.list_ports
 
-from device import Characteristic, CharacteristicWidget, Device, DeviceWidget, Service, ServiceState, ServiceWidget
+from device import (
+    Characteristic, CharacteristicState, CharacteristicWidget, Device, DeviceWidget, Service, ServiceState,
+    ServiceWidget
+)
 
 MAX_RETRY_ATTEMPTS = 3
 
@@ -195,13 +198,23 @@ class ScannerApp(threading.Thread):
     def on_procedure_completed(self, event: bgapi.bglib.BGEvent) -> None:
         """Callback for when the BGM220 Explorer Kit receives a procedure completed event"""
 
+        def update_services_and_characteristics(device: Device) -> None:
+            """Update the state for the currently active service or characteristic"""
+
+            for service in device.services:
+                if service.state != ServiceState.DISCOVERED:
+                    service.state = ServiceState.DISCOVERED
+                    return
+
+                for characteristic in service.characteristics:
+                    if characteristic.state != CharacteristicState.NONE:
+                        characteristic.state = CharacteristicState.NONE
+                        return
+
         device = self.get_device_by_handle(event.connection)
 
         if device is not None:
-            for service in device.services:
-                if service.state == ServiceState.DISCOVERING:
-                    service.state = ServiceState.DISCOVERED
-                    break
+            update_services_and_characteristics(device)
 
             for service in device.services:
                 if service.state == ServiceState.DISCOVERING:
@@ -229,31 +242,43 @@ class ScannerApp(threading.Thread):
     def read_from_characteristic(self, device: Device, characteristic: Characteristic) -> None:
         """Read from a device connected to the BGM220 Explorer Kit"""
 
-        #TODO: Only 1 GATT command can be issued at a time
+        if device.is_using_gatt_command():
+            return
+
         if device.is_connected:
             self.lib.bt.gatt.read_characteristic_value(device.handle, characteristic.handle)
+            characteristic.state = CharacteristicState.READING
 
     def write_to_characteristic(self, device: Device, characteristic: Characteristic, packet: str) -> None:
         """Write to a device connected to the BGM220 Explorer Kit"""
 
-        #TODO: Only 1 GATT command can be issued at a time
+        if device.is_using_gatt_command():
+            return
+
         if device.is_connected:
             self.lib.bt.gatt.write_characteristic_value(device.handle, characteristic.handle, bytes.fromhex(packet))
+            characteristic.state = CharacteristicState.WRITING
             characteristic.packet = packet
 
     def subscribe_to_notification(self, device: Device, characteristic: Characteristic) -> None:
         """Subscribe to a device's notification connected to the BGM220 Explorer Kit"""
 
-        #TODO: Only 1 GATT command can be issued at a time
+        if device.is_using_gatt_command():
+            return
+
         if device.is_connected:
             self.lib.bt.gatt.set_characteristic_notification(device.handle, characteristic.handle, 1)
+            characteristic.state = CharacteristicState.SUBSCRIBING_NOTIFICATION
 
     def subscribe_to_indication(self, device: Device, characteristic: Characteristic) -> None:
         """Subscribe to a device's indication connected to the BGM220 Explorer Kit"""
 
-        #TODO: Only 1 GATT command can be issued at a time
+        if device.is_using_gatt_command():
+            return
+
         if device.is_connected:
             self.lib.bt.gatt.set_characteristic_notification(device.handle, characteristic.handle, 2)
+            characteristic.state = CharacteristicState.SUBSCRIBING_INDICATION
 
     def get_device_by_address(self, address: str) -> Device | None:
         """Get the corresponding device with the matching address"""

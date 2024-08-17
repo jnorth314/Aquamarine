@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src"))
 import unittest
 from unittest.mock import Mock, patch
 
-from device import Characteristic, Device, Service, ServiceState
+from device import Characteristic, CharacteristicState, Device, Service, ServiceState
 from scanner import ScannerApp
 
 class TestScannerApp(unittest.TestCase):
@@ -201,7 +201,17 @@ class TestScannerApp(unittest.TestCase):
 
         app.on_procedure_completed(event)
         self.assertEqual(service1.state, ServiceState.DISCOVERED)
+        self.assertEqual(service2.state, ServiceState.DISCOVERING)
         mock_lib.return_value.bt.gatt.discover_characteristics.assert_called_once_with(1, 2)
+
+        app.on_procedure_completed(event)
+        self.assertEqual(service2.state, ServiceState.DISCOVERED)
+
+        characteristic = Characteristic("ABCD", 3, 0x02)
+        characteristic.state = CharacteristicState.READING
+        service1.characteristics.append(characteristic)
+        app.on_procedure_completed(event)
+        self.assertEqual(characteristic.state, CharacteristicState.NONE)
 
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
@@ -248,6 +258,7 @@ class TestScannerApp(unittest.TestCase):
         app = ScannerApp()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
+        service.state = ServiceState.DISCOVERED
         characteristic = Characteristic("0001", 2, 0x02)
 
         device.is_connected = True
@@ -259,6 +270,10 @@ class TestScannerApp(unittest.TestCase):
 
         app.read_from_characteristic(device, characteristic)
         mock_lib.return_value.bt.gatt.read_characteristic_value.assert_called_once_with(1, 2)
+        self.assertEqual(characteristic.state, CharacteristicState.READING)
+
+        app.read_from_characteristic(device, characteristic)
+        mock_lib.return_value.bt.gatt.read_characteristic_value.assert_called_once_with(1, 2)
 
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
@@ -267,6 +282,7 @@ class TestScannerApp(unittest.TestCase):
         app = ScannerApp()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
+        service.state = ServiceState.DISCOVERED
         characteristic = Characteristic("0001", 2, 0x08)
 
         device.is_connected = True
@@ -278,6 +294,10 @@ class TestScannerApp(unittest.TestCase):
 
         app.write_to_characteristic(device, characteristic, "ABCD")
         mock_lib.return_value.bt.gatt.write_characteristic_value.assert_called_once_with(1, 2, b"\xAB\xCD")
+        self.assertEqual(characteristic.state, CharacteristicState.WRITING)
+
+        app.write_to_characteristic(device, characteristic, "ABCD")
+        mock_lib.return_value.bt.gatt.write_characteristic_value.assert_called_once_with(1, 2, b"\xAB\xCD")
 
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
@@ -286,6 +306,7 @@ class TestScannerApp(unittest.TestCase):
         app = ScannerApp()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
+        service.state = ServiceState.DISCOVERED
         characteristic = Characteristic("0001", 2, 0x10)
 
         device.is_connected = True
@@ -297,6 +318,10 @@ class TestScannerApp(unittest.TestCase):
 
         app.subscribe_to_notification(device, characteristic)
         mock_lib.return_value.bt.gatt.set_characteristic_notification.assert_called_once_with(1, 2, 1)
+        self.assertEqual(characteristic.state, CharacteristicState.SUBSCRIBING_NOTIFICATION)
+
+        app.subscribe_to_notification(device, characteristic)
+        mock_lib.return_value.bt.gatt.set_characteristic_notification.assert_called_once_with(1, 2, 1)
 
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
@@ -305,6 +330,7 @@ class TestScannerApp(unittest.TestCase):
         app = ScannerApp()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
+        service.state = ServiceState.DISCOVERED
         characteristic = Characteristic("0001", 2, 0x10)
 
         device.is_connected = True
@@ -313,6 +339,10 @@ class TestScannerApp(unittest.TestCase):
         service.characteristics.append(characteristic)
 
         app.devices.append(device)
+
+        app.subscribe_to_indication(device, characteristic)
+        mock_lib.return_value.bt.gatt.set_characteristic_notification.assert_called_once_with(1, 2, 2)
+        self.assertEqual(characteristic.state, CharacteristicState.SUBSCRIBING_INDICATION)
 
         app.subscribe_to_indication(device, characteristic)
         mock_lib.return_value.bt.gatt.set_characteristic_notification.assert_called_once_with(1, 2, 2)
