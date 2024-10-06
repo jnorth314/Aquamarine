@@ -18,6 +18,7 @@ def create_devices() -> list[Device]:
     """Create a list of fake Devices/Services/Characteristics"""
 
     devices = [Device(":".join(f"{random.randrange(256):02X}" for _ in range(6))) for _ in range(NUM_DEVICES)]
+    has_connecting = False
 
     for device in devices:
         device.rssi = random.randrange(-120, -20)
@@ -34,16 +35,20 @@ def create_devices() -> list[Device]:
                 ) for _ in range(NUM_SERVICES_PER_DEVICE)
             ]
 
+            handle = 1
+
             for service in device.services:
+                service.handle = handle
                 service.characteristics = [
                     Characteristic(
                         random.choice([f"{random.randrange(2**16):04X}", f"{random.randrange(2**128):016X}"]),
-                        random.randrange(2**32),
+                        handle := handle + 1,
                         random.randrange(8) << 3 | random.randrange(1) << 1
                     ) for _ in range(NUM_CHARACTERISTICS_PER_SERVICE)
                 ]
-        elif device.is_connectable:
+        elif not has_connecting and device.is_connectable:
             device.handle = random.choice([None, 1])
+            has_connecting = True
 
     return devices
 
