@@ -475,11 +475,13 @@ class ScannerWidget(QWidget): # pragma: no cover
             case self.devices:
                 if self.devices.itemWidget(item).device.is_connected:
                     self.devices.hide()
+                    self.services.clear()
                     self.services.show()
                     self.header.label.setText("Services")
                     self.header.button.show()
             case self.services:
                 self.services.hide()
+                self.characteristics.clear()
                 self.characteristics.show()
                 self.header.label.setText("Characteristics")
                 self.header.button.show()
