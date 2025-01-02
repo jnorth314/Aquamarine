@@ -7,7 +7,7 @@ A Python GUI application to view and monitor Bluetooth devices through the use o
 ## Getting Started!
 
 1. `pip install -r requirements.txt`
-2. Flash **Bluetooth - NCP** to the [BGM220 Explorer Kit](https://www.silabs.com/development-tools/wireless/bluetooth/bgm220-explorer-kit) (w/ SDK 2024.6.1)
+2. Flash **Bluetooth - NCP** to the [BGM220 Explorer Kit](https://www.silabs.com/development-tools/wireless/bluetooth/bgm220-explorer-kit) (w/ SDK 2024.12.0)
 3. `python ./src/main.py`
 
 ## Thanks
