@@ -6,18 +6,18 @@ import unittest
 from unittest.mock import Mock, patch
 
 from device import Characteristic, CharacteristicState, Device, Service, ServiceState
-from scanner import ScannerApp
+from scanner import Scanner
 
-class TestScannerApp(unittest.TestCase):
+class TestScanner(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[])
     def test_create_without_kit(self, _):
-        self.assertRaises(ValueError, ScannerApp)
+        self.assertRaises(ValueError, Scanner)
 
     @patch("bgapi.BGLib")
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_create_with_kit(self, *_):
-        app = ScannerApp()
+        app = Scanner()
 
         self.assertListEqual(app.devices, [])
         self.assertFalse(app.is_running.is_set())
@@ -27,7 +27,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_stop(self, *_):
-        app = ScannerApp()
+        app = Scanner()
 
         app.is_running.set()
         app.stop()
@@ -37,7 +37,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_reboot(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
 
         app.reboot()
         mock_lib.return_value.bt.system.reboot.assert_called_once()
@@ -46,7 +46,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_on_advertisement(self, *_):
-        app = ScannerApp()
+        app = Scanner()
 
         event = Mock()
         event.address = "00:11:22:33:44:55"
@@ -65,7 +65,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_on_boot(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
 
         app.on_boot()
         self.assertTrue(app.is_ready.is_set())
@@ -78,7 +78,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_on_connection_opened(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
 
         app.devices.append(device)
@@ -95,7 +95,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_on_connection_closed(self, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
 
         device.handle = 1
@@ -114,7 +114,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_on_characteristic_value(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
         characteristic = Characteristic("0001", 2, 0x20)
@@ -139,7 +139,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_on_service(self, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
 
         device.handle = 1
@@ -160,7 +160,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_on_characteristic(self, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
 
@@ -185,7 +185,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_on_procedure_completed(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         service1 = Service("0000", 1)
         service2 = Service("0001", 2)
@@ -217,7 +217,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_connect_device(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
 
         app.devices.append(device)
@@ -241,7 +241,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_disconnect_device(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
 
         device.handle = 1
@@ -255,7 +255,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_read_from_characteristic(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
         service.state = ServiceState.DISCOVERED
@@ -279,7 +279,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_write_to_characteristic(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
         service.state = ServiceState.DISCOVERED
@@ -303,7 +303,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_subscribe_to_notification(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
         service.state = ServiceState.DISCOVERED
@@ -327,7 +327,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     @patch("bgapi.BGLib")
     def test_subscribe_to_indication(self, mock_lib, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
         service.state = ServiceState.DISCOVERED
@@ -351,7 +351,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_get_device_by_address(self, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
 
         app.devices.append(device)
@@ -363,7 +363,7 @@ class TestScannerApp(unittest.TestCase):
     @patch("bgapi.SerialConnector")
     @patch("serial.tools.list_ports.comports", return_value=[("COM1", "JLink CDC UART", None)])
     def test_get_device_by_handle(self, *_):
-        app = ScannerApp()
+        app = Scanner()
         device = Device("00:11:22:33:44:55")
         device.handle = 1
 

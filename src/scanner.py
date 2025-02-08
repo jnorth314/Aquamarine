@@ -17,7 +17,7 @@ from device import (
 
 MAX_RETRY_ATTEMPTS = 3
 
-class ScannerApp(threading.Thread):
+class Scanner(threading.Thread):
     """Thread for handling event callbacks on the BGM220 Explorer Kit"""
 
     def __init__(self) -> None:
@@ -371,8 +371,8 @@ class ScannerWidget(QWidget): # pragma: no cover
     def __init__(self) -> None:
         super().__init__()
 
-        self.app = ScannerApp()
-        self.app.start()
+        self.scanner = Scanner()
+        self.scanner.start()
 
         self.setWindowTitle("Aquamarine")
         self.setFixedSize(360, 480)
@@ -406,7 +406,7 @@ class ScannerWidget(QWidget): # pragma: no cover
 
     @typing.no_type_check
     def update_layout(self) -> None:
-        """Update the GUI based on data from the ScannerApp"""
+        """Update the GUI based on data from the Scanner"""
 
         # Update all of the existing widgets in the lists
         for i in range(self.devices.count()):
@@ -417,7 +417,7 @@ class ScannerWidget(QWidget): # pragma: no cover
 
         # Add remaining missing device widgets to the list
         devices = [self.devices.itemWidget(self.devices.item(i)).device for i in range(self.devices.count())]
-        for device in self.app.devices:
+        for device in self.scanner.devices:
             if device not in devices:
                 item = QListWidgetItem()
                 widget = DeviceWidget(device)
@@ -513,9 +513,9 @@ class ScannerWidget(QWidget): # pragma: no cover
         device = self.sender().parent().device
 
         if device.is_connected:
-            self.app.disconnect_device(device)
+            self.scanner.disconnect_device(device)
         else:
-            self.app.connect_device(device)
+            self.scanner.connect_device(device)
 
     @typing.no_type_check
     def on_read_button(self) -> None:
@@ -526,7 +526,7 @@ class ScannerWidget(QWidget): # pragma: no cover
         device = widget.device
         characteristic = widget.characteristic
 
-        self.app.read_from_characteristic(device, characteristic)
+        self.scanner.read_from_characteristic(device, characteristic)
 
     @typing.no_type_check
     def on_write_button(self) -> None:
@@ -541,7 +541,7 @@ class ScannerWidget(QWidget): # pragma: no cover
             device = widget.device
             characteristic = widget.characteristic
 
-            self.app.write_to_characteristic(device, characteristic, dialog.packet)
+            self.scanner.write_to_characteristic(device, characteristic, dialog.packet)
 
     @typing.no_type_check
     def on_notify_button(self) -> None:
@@ -552,7 +552,7 @@ class ScannerWidget(QWidget): # pragma: no cover
         device = widget.device
         characteristic = widget.characteristic
 
-        self.app.subscribe_to_notification(device, characteristic)
+        self.scanner.subscribe_to_notification(device, characteristic)
 
     @typing.no_type_check
     def on_indicate_button(self) -> None:
@@ -563,12 +563,12 @@ class ScannerWidget(QWidget): # pragma: no cover
         device = widget.device
         characteristic = widget.characteristic
 
-        self.app.subscribe_to_indication(device, characteristic)
+        self.scanner.subscribe_to_indication(device, characteristic)
 
     def closeEvent(self, event: QCloseEvent | None) -> None: # pylint: disable=invalid-name
         """Event when the user closes the window"""
 
         if event is not None:
-            self.app.stop()
-            self.app.join()
+            self.scanner.stop()
+            self.scanner.join()
             event.accept()
