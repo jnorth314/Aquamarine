@@ -163,6 +163,7 @@ class TestScanner(unittest.TestCase):
         app = Scanner()
         device = Device("00:11:22:33:44:55")
         service = Service("0000", 1)
+        service.state = ServiceState.DISCOVERING
 
         device.handle = 1
         device.services.append(service)
@@ -188,6 +189,7 @@ class TestScanner(unittest.TestCase):
         app = Scanner()
         device = Device("00:11:22:33:44:55")
         service1 = Service("0000", 1)
+        service1.state = ServiceState.DISCOVERING
         service2 = Service("0001", 2)
 
         device.handle = 1

@@ -202,7 +202,7 @@ class Scanner(threading.Thread):
             """Update the state for the currently active service or characteristic"""
 
             for service in device.services:
-                if service.state != ServiceState.DISCOVERED:
+                if service.state == ServiceState.DISCOVERING:
                     service.state = ServiceState.DISCOVERED
                     return
 
@@ -217,7 +217,8 @@ class Scanner(threading.Thread):
             update_services_and_characteristics(device)
 
             for service in device.services:
-                if service.state == ServiceState.DISCOVERING:
+                if service.state == ServiceState.NONE:
+                    service.state = ServiceState.DISCOVERING
                     self.lib.bt.gatt.discover_characteristics(device.handle, service.handle)
                     break
 

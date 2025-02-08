@@ -26,6 +26,7 @@ class Characteristic: # pylint: disable=too-few-public-methods
 class ServiceState(IntEnum):
     """enum for the current discovery state of a Service"""
 
+    NONE = 0
     DISCOVERING = 1
     DISCOVERED = 2
 
@@ -36,7 +37,7 @@ class Service:
         self.uuid = uuid
         self.handle = handle
 
-        self.state = ServiceState.DISCOVERING
+        self.state = ServiceState.NONE
         self.characteristics: list[Characteristic] = []
 
     def get_characteristic_by_uuid(self, uuid: str) -> Characteristic | None:
